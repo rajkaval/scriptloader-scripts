@@ -1,7 +1,10 @@
+let version = "1.1"
 let validDomains = /groceries.morrisons.com|shoppingslot.co.uk|github.com/s
 
 if(!document.domain.match(validDomains)){
 	removeElement('scriptLoader')
+}else{
+console.log(`Delivery Slot Finder ${version} loaded`)
 }
 function removeElement(elementId) {
     var element = document.getElementById(elementId);
@@ -81,7 +84,10 @@ function beep(vol, freq, duration){
 							console.log("No slot available")
 							reloadPage(30);
 						}
-					}
+					}else{
+                        console.log("No slot available")
+                        reloadPage(60);
+                    }
 						
 				},5*1000);
 			}
