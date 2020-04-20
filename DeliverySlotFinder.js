@@ -1,11 +1,68 @@
-let version = "1.1"
+let version = "1.2"
+let thisName = 'ScriptLoader'
 let validDomains = /groceries.morrisons.com|shoppingslot.co.uk|github.com/s
+let icons = {"bell": '🔔',"hourglass": '⏳'};
+let shouldReload = true;
+let thisSettings = {};
+    
+function enableReloading(reload=false){
+    beepNow();
+    thisSettings.enabled =true;
+    updateSettings(thisSettings);
+    document.getElementById('scriptLoaderBtn').innerHTML = icons.hourglass;
+    shouldReload=true;
+    //stopBeeping();
+    if(reload)
+        reloadPage(1);
+    document.getElementById('scriptLoaderBtn').onclick = function () { disableReloading();};
+};
+
+function updateSettings(value = null){
+    if(value){
+        thisSettings = value;
+        localStorage.setItem(thisName,JSON.stringify(value));
+    }else{
+        thisSettings= JSON.parse(localStorage.getItem(thisName));
+    }
+};
+
+function getSettings(value){
+    return JSON.parse(localStorage.getItem(sName));
+};
+
+let startedBeeping = null;
+var btnStopBeeping = document.createElement("input");
+btnStopBeeping.setAttribute("type", "button");
+btnStopBeeping.setAttribute("value", "🔔");
+btnStopBeeping.setAttribute("id", "btnStopBeeping");
 
 if(!document.domain.match(validDomains)){
-	removeElement('scriptLoader')
+    console.log ("Removing script loader");
+    removeElement('scriptLoader')
+    localStorage.removeItem(thisName);
 }else{
-console.log(`Delivery Slot Finder ${version} loaded`)
-}
+    var scriptLoaderBtn = document.createElement("Button");
+    scriptLoaderBtn.setAttribute('id','scriptLoaderBtn');
+    scriptLoaderBtn.style = "width: 35px; height: 30px;"
+    //scriptLoaderBtn.innerHTML = ;
+    document.getElementById("scriptLoaderBtn")
+    if(!localStorage[thisName]){
+        updateSettings({pageUrl: window.location.href,enabled: true,reloading: false})
+    }else{
+        updateSettings();
+        //console.log("Read settings", thisSettings);
+    }
+    if(thisSettings.reloading && thisSettings.pageUrl != window.location.href){
+        reloadPage(30);
+    }else{
+        thisSettings.reloading =false;
+        updateSettings(thisSettings);
+    }
+    addElement('scriptLoader',scriptLoaderBtn,icons.hourglass);
+    document.getElementById('scriptLoaderBtn').onclick = function () { disableReloading();};
+    console.log(`Delivery Slot Finder ${version} loaded`)
+  }
+
 function removeElement(elementId) {
     var element = document.getElementById(elementId);
     element.parentNode.removeChild(element);
@@ -15,11 +72,39 @@ function addElement(parentId, newElement, html) {
     newElement.innerHTML = html;
     p.appendChild(newElement);
 };
-let startedBeeping = null;
-var btnStopBeeping = document.createElement("input");
-btnStopBeeping.setAttribute("type", "button");
-btnStopBeeping.setAttribute("value", "🔔");
-btnStopBeeping.setAttribute("id", "btnStopBeeping");
+function createCookie(cookieName,cookieValue,daysToExpire){
+    var date = new Date();
+    date.setTime(date.getTime()+(daysToExpire*24*60*60*1000));
+    document.cookie = cookieName + "=" + cookieValue + "; expires=" + date.toGMTString();
+}
+function getCookie(cookieName){
+    var name = cookieName + "=";
+    var allCookieArray = document.cookie.split(';');
+    for(var i=0; i<allCookieArray.length; i++)
+    {
+    var temp = allCookieArray[i].trim();
+    if (temp.indexOf(name)==0)
+    return temp.substring(name.length,temp.length);
+    }
+};
+
+function reloadPage(waitTimeSecs){
+    if(!thisSettings.enabled)
+        return;
+	setTimeout(function () {
+       
+        if(shouldReload){
+            if(!thisSettings.reloading) {
+                thisSettings.pageUrl = window.location.href;
+                thisSettings.reloading = true;
+                updateSettings(thisSettings);
+                document.location.reload();
+            }else{
+                window.location.href =thisSettings.pageUrl;
+            }
+        }
+	},waitTimeSecs*1000)
+};
 
 	
 if(!document.getElementByXPath){
@@ -29,8 +114,18 @@ if(!document.getElementByXPath){
 const a=new AudioContext() 
 
 
+
+function disableReloading(){
+    thisSettings.enabled =false;
+    updateSettings(thisSettings);
+    document.getElementById('scriptLoaderBtn').innerHTML = icons.bell;
+    shouldReload=false;
+    document.getElementById('scriptLoaderBtn').onclick = function () { enableReloading(true);};
+    //stopBeeping();
+};
+
 function stopBeeping(){
-	console.log("stopBeeping()");
+	//console.log("stopBeeping()");
 	clearTimeout(startedBeeping);
 	removeElement('btnStopBeeping');
 	document.onclick = docOnClick;
@@ -52,11 +147,7 @@ function beepNow () {
 	}
 };
 
-function reloadPage(waitTimeSecs){
-	setTimeout(function () {
-		document.location.reload();
-	},waitTimeSecs*1000)
-};
+
 
 function beep(vol, freq, duration){
   v=a.createOscillator()
@@ -71,7 +162,7 @@ function beep(vol, freq, duration){
 }
 	switch(document.domain) {
 		case "groceries.morrisons.com" :
-			if(document.location.href.match(/getAddressesForDelivery.do/)){
+            if(document.location.href.match(/getAddressesForDelivery.do/)){
 				setTimeout(function () {
 					
 					let rows= document.getElementsByXPath("//tbody/tr/td[@id]")
@@ -90,7 +181,11 @@ function beep(vol, freq, duration){
                     }
 						
 				},5*1000);
-			}
+			} else{
+                setTimeout(function () {
+
+                })
+            }
 			break;
 
 		case "shoppingslot.co.uk" :
