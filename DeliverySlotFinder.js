@@ -1,4 +1,4 @@
-let version = "1.3"
+let version = "1.4"
 let thisName = 'ScriptLoader'
 let validDomains = /groceries.morrisons.com|shoppingslot.co.uk|www.ocado.com|github.com/s
 let icons = {"bell": '🔔',"hourglass": '⏳',
@@ -171,6 +171,22 @@ if(!document.domain.match(validDomains)){
     console.log(`Delivery Slot Finder ${version} loaded`);
 }
 
+//Domain blocking
+switch(document.domain) {
+    case "groceries.morrisons.com" :
+        thisSettings["blacklist"]=["queue-it.net/","facebook.com"];
+        thisSettings["whitelist"]=[];
+        updateSettings(thisSettings);
+        break;
+    case "www.ocado.com" :
+        thisSettings["blacklist"]=["queue-it.net/", "q.ocado.com/","facebook"];
+        thisSettings["whitelist"]=["q.ocado.com.*?c=ocado&e=ocadoaccounts"];
+        updateSettings(thisSettings);
+        break;
+     default:
+        break;
+}
+
 if(thisSettings.enabled){
     document.getElementByXPath = function(sValue) { var a = this.evaluate(sValue, this, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null); if (a.snapshotLength > 0) { return a.snapshotItem(0); } };
     document.getElementsByXPath = function(sValue){ var aResult = new Array();var a = this.evaluate(sValue, this, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);for ( var i = 0 ; i < a.snapshotLength ; i++ ){aResult.push(a.snapshotItem(i));}return aResult;};
@@ -178,7 +194,6 @@ if(thisSettings.enabled){
     
     switch(document.domain) {
         case "groceries.morrisons.com" :
-            
             if(!document.location.href.match(/getAddressesForDelivery.do/) && thisSettings.enabled){
                 loadPage('https://groceries.morrisons.com/webshop/getAddressesForDelivery.do')
             }
@@ -209,39 +224,39 @@ if(thisSettings.enabled){
             break;
         
             case "www.ocado.com" :
-                    if(!document.location.href.match(/getAddressesForDelivery.do/) && thisSettings.enabled){
-                        loadPage('https://www.ocado.com/webshop/getAddressesForDelivery.do')                        
+            if(!document.location.href.match(/getAddressesForDelivery.do/) && thisSettings.enabled){
+                loadPage('https://www.ocado.com/webshop/getAddressesForDelivery.do')                        
+            }
+            if(document.location.href.match(/getAddressesForDelivery.do/)){
+                setTimeout(function () {
+                    
+                    let rows= document.getElementsByXPath("//tbody/tr/td[@id]")
+                    let days= document.getElementsByXPath("//table[@class='table-header']/thead/tr/th[@id]")
+                    if (rows){
+                        if (document.getElementsByXPath("//*[@class='unavailable']").length < rows.length * days.length){
+                            console.log("Slot(s) could be available")
+                            beepNow();
+                        }else{
+                            console.log("No slot available")
+                            reloadPage(30);
+                        }
                     }
-                    if(document.location.href.match(/getAddressesForDelivery.do/)){
-                        setTimeout(function () {
-                            
-                            let rows= document.getElementsByXPath("//tbody/tr/td[@id]")
-                            let days= document.getElementsByXPath("//table[@class='table-header']/thead/tr/th[@id]")
-                            if (rows){
-                                if (document.getElementsByXPath("//*[@class='unavailable']").length < rows.length * days.length){
-                                    console.log("Slot(s) could be available")
-                                    beepNow();
-                                }else{
-                                    console.log("No slot available")
-                                    reloadPage(45);
-                                }
-                            }
-                            else if(!noFurtherSlots){
-                                console.log("Slot(s) could be available")
-                                beepNow();
-                            }
-                            else{
-                                console.log("No slot available")
-                                reloadPage(60);
-                            }                            
-                                
-                        },5*1000);
-                    } else{
-                        setTimeout(function () {
-        
-                        })
+                    else if(!noFurtherSlots){
+                        console.log("Slot(s) could be available")
+                        beepNow();
                     }
-                    break;
+                    else{
+                        console.log("No slot available")
+                        reloadPage(30);
+                    }                            
+                        
+                },5*1000);
+            } else{
+                setTimeout(function () {
+
+                })
+            }
+            break;
         
 
         case "shoppingslot.co.uk" :
